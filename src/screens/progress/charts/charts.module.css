@@ -1,0 +1,106 @@
+.chartWrap {
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
+}
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.gridline {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.targetLine {
+  stroke: var(--fg-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.crosshair {
+  stroke: var(--fg-muted);
+  stroke-width: 1;
+}
+.axisLabel {
+  fill: var(--fg-muted);
+  font-size: 8px;
+}
+.tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.barsWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 100px;
+  padding-top: 8px;
+}
+.barColumn {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  min-height: var(--tap);
+}
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+  min-height: 2px;
+}
+.barTarget {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  border-top: 2px dashed var(--fg-muted);
+}
+.barLabel {
+  position: absolute;
+  bottom: -18px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+.milestoneTrack {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.milestoneDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.milestoneDotDone {
+  background: var(--accent);
+}
+.milestoneDotPending {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.milestoneConnector {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+}
+.milestoneConnectorDone {
+  background: var(--accent);
+}

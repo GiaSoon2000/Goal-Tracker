@@ -15,7 +15,8 @@ import { Button } from '../../ui/Button';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { cls } from '../../ui/cls';
-import type { GoalId, MilestoneId, MilestoneStatus } from '../../domain/types';
+import type { Activity, GoalId, MilestoneId, MilestoneStatus } from '../../domain/types';
+import { QuickLogSheet } from './QuickLogSheet';
 import { ReplanPreviewSheet } from './ReplanPreviewSheet';
 import s from './GoalDetailScreen.module.css';
 
@@ -28,6 +29,7 @@ export function GoalDetailScreen() {
   const toast = useToast();
   const { data } = useGoalDetail((goalId ?? '') as GoalId, today, settings.weekStartsOn);
   const [replanDiff, setReplanDiff] = useState<ReplanResult | null>(null);
+  const [loggingActivity, setLoggingActivity] = useState<Activity | null>(null);
 
   if (!data.goal) {
     return (
@@ -40,7 +42,7 @@ export function GoalDetailScreen() {
     );
   }
 
-  const { goal, progress, weekSummary, milestones } = data;
+  const { goal, activities, progress, weekSummary, milestones } = data;
 
   async function handleDelete() {
     const ok = await confirm({
@@ -88,7 +90,17 @@ export function GoalDetailScreen() {
               <div className={s.subtitle}>
                 {progress?.currentValue} → {progress?.targetValue} {progress?.unit}
               </div>
-              <div className={s.current}>Current: {progress?.currentValue}</div>
+              <div className={s.heroRow}>
+                <div className={s.current}>Current: {progress?.currentValue}</div>
+                {(() => {
+                  const outcome = activities.find((a) => a.role === 'outcome');
+                  return outcome ? (
+                    <button type="button" className={s.logLink} onClick={() => setLoggingActivity(outcome)}>
+                      + Log
+                    </button>
+                  ) : null;
+                })()}
+              </div>
             </>
           ) : (
             progress?.currentMilestone && <div className={s.subtitle}>Current milestone: {progress.currentMilestone.title}</div>
@@ -110,14 +122,22 @@ export function GoalDetailScreen() {
             </div>
             {weekSummary.rows
               .filter((r) => r.target !== null)
-              .map((row) => (
-                <div key={row.activityId} className={s.row}>
-                  <span>{row.name}</span>
-                  <span>
-                    {row.actual} / {row.target}
-                  </span>
-                </div>
-              ))}
+              .map((row) => {
+                const activity = activities.find((a) => a.id === row.activityId);
+                return (
+                  <div key={row.activityId} className={s.row}>
+                    <span>{row.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {row.actual} / {row.target}
+                      {activity && (
+                        <button type="button" className={s.logLink} onClick={() => setLoggingActivity(activity)}>
+                          + Log
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         )}
 
@@ -134,6 +154,7 @@ export function GoalDetailScreen() {
         )}
 
         <div className={s.actions}>
+          <Button onClick={() => void navigate(`/goals/${goal!.id}/edit`)}>Edit</Button>
           {goal.status === 'active' ? (
             <Button onClick={() => void setGoalStatus(goal!.id, 'paused')}>Pause</Button>
           ) : (
@@ -144,6 +165,17 @@ export function GoalDetailScreen() {
       </div>
 
       {replanDiff && <ReplanPreviewSheet diff={replanDiff} onApply={() => void handleApplyReplan()} onCancel={() => setReplanDiff(null)} />}
+      {loggingActivity && (
+        <QuickLogSheet
+          goalId={goal.id}
+          activity={loggingActivity}
+          onClose={() => setLoggingActivity(null)}
+          onLogged={() => {
+            setLoggingActivity(null);
+            toast.show('Saved');
+          }}
+        />
+      )}
     </>
   );
 }

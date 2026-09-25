@@ -3,10 +3,10 @@
  * repo file. Still repo/-only — the one place allowed to call getDb() directly.
  */
 import { getDb } from '../db/database';
-import { endOfWeek, startOfWeek, todayLocal } from '../domain/date';
+import { addWeeks, endOfWeek, resolveDeadline, startOfWeek, todayLocal } from '../domain/date';
 import { goalProgress, summarizeWeek } from '../domain/progress';
 import { latestEntry } from './entryRepo';
-import type { Activity, DailyTask, Goal, GoalProgress, LocalDate, WeekSummary, WeeklyPlan } from '../domain/types';
+import type { Activity, DailyTask, Goal, GoalId, GoalProgress, LocalDate, TrackEntry, WeekStart, WeekSummary, WeeklyPlan } from '../domain/types';
 
 export interface TodayScreenData {
   goals: Goal[];
@@ -105,4 +105,75 @@ export async function weekDetailQuery(weekStart: LocalDate): Promise<WeekDetailR
     rows.push({ goal, plan, activities });
   }
   return rows;
+}
+
+export interface MetricChartData {
+  entries: { date: LocalDate; value: number }[];
+  startValue: number;
+  targetValue: number;
+  decimals: 0 | 1 | 2;
+  unit: string;
+  startDate: LocalDate;
+  deadlineDate: LocalDate | null;
+}
+
+export interface WeekBarData {
+  weekStart: LocalDate;
+  actual: number;
+  target: number;
+}
+
+export interface ProgressChartData {
+  metric: MetricChartData | null;
+  weeks: WeekBarData[];
+  milestones: { id: string; title: string; done: boolean }[];
+}
+
+const CONSISTENCY_WEEKS = 8;
+
+/** EC-M01: a day with two entries collapses to the latest-by-loggedAt one for charting. */
+function collapseByDay(entries: TrackEntry[]): { date: LocalDate; value: number }[] {
+  const byDay = new Map<LocalDate, TrackEntry>();
+  for (const e of entries) {
+    if (e.kind !== 'metric') continue;
+    const existing = byDay.get(e.date);
+    if (!existing || e.loggedAt > existing.loggedAt) byDay.set(e.date, e);
+  }
+  return [...byDay.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, e]) => ({ date, value: e.kind === 'metric' ? e.value.n : 0 }));
+}
+
+export async function progressChartsQuery(goalId: GoalId, today: LocalDate, weekStartsOn: WeekStart): Promise<ProgressChartData> {
+  const db = getDb();
+  const goal = await db.goals.get(goalId);
+  if (!goal) return { metric: null, weeks: [], milestones: [] };
+
+  const activities = await db.activities.where('goalId').equals(goalId).toArray();
+  const deadlineDate = goal.deadline ? resolveDeadline(goal.deadline) : null;
+
+  let metric: MetricChartData | null = null;
+  if (goal.type === 'metric') {
+    const outcome = activities.find((a) => a.role === 'outcome');
+    if (outcome) {
+      const rawEntries = await db.entries.where('[activityId+date]').between([outcome.id, goal.startDate], [outcome.id, today], true, true).toArray();
+      metric = { entries: collapseByDay(rawEntries), startValue: goal.config.startValue, targetValue: goal.config.targetValue, decimals: goal.config.decimals, unit: goal.config.unit, startDate: goal.startDate, deadlineDate };
+    }
+  }
+
+  const currentWeekStart = startOfWeek(today, weekStartsOn);
+  const earliestWeekStart = startOfWeek(goal.startDate, weekStartsOn);
+  const firstWeek = addWeeks(currentWeekStart, -(CONSISTENCY_WEEKS - 1)) < earliestWeekStart ? earliestWeekStart : addWeeks(currentWeekStart, -(CONSISTENCY_WEEKS - 1));
+
+  const weeks: WeekBarData[] = [];
+  for (let w = firstWeek; w <= currentWeekStart; w = addWeeks(w, 1)) {
+    const plan = (await db.weeklyPlans.where('[goalId+weekStart]').equals([goalId, w]).first()) ?? null;
+    const weekEnd = endOfWeek(w, weekStartsOn);
+    const entries = await db.entries.where('[goalId+date]').between([goalId, w], [goalId, weekEnd], true, true).toArray();
+    const summary = summarizeWeek({ goal, activities, plan, entries, weekStart: w, today, weekStartsOn });
+    weeks.push({ weekStart: w, actual: summary.adherence ?? 0, target: summary.adherence === null ? 0 : 1 });
+  }
+
+  const milestonesRaw = await db.milestones.where('goalId').equals(goalId).sortBy('order');
+  const milestones = milestonesRaw.map((m) => ({ id: m.id, title: m.title, done: m.status === 'done' }));
+
+  return { metric, weeks, milestones };
 }

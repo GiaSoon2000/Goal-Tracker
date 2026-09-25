@@ -8,7 +8,19 @@
 .current {
   font-size: var(--text-stat);
   font-weight: 700;
+}
+.heroRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   margin-bottom: var(--space-3);
+}
+.logLink {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--text-caption);
+  min-height: var(--tap);
+  padding-inline: var(--space-2);
 }
 .deadline {
   color: var(--fg-muted);

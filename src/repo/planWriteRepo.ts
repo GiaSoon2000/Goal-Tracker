@@ -161,3 +161,20 @@ export async function ensureWeekMaterialized(goalId: GoalId, weekStart: LocalDat
     await materializeWeekInTx(db, goalId, activities, weekStart, weekStartsOn, goal.startDate, deadlineDate, Date.now());
   });
 }
+
+/**
+ * Ensures the CURRENT week exists for every active goal. This is what actually
+ * makes materialization "lazy but continuous" as calendar weeks pass — without
+ * it, a goal's tasks would only ever exist for the week it was created in.
+ * Deliberately does NOT backfill every missed week in between (EDGE-CASES.md:
+ * "no plan for this week" renders as no-data, never invented and marked missed).
+ * Called at boot and whenever `today` changes (see MaterializationEffect).
+ */
+export async function ensureCurrentWeekMaterializedForActiveGoals(today: LocalDate, weekStartsOn: 0 | 1): Promise<void> {
+  const db = getDb();
+  const weekStart = startOfWeek(today, weekStartsOn);
+  const activeGoals = await db.goals.where('status').equals('active').toArray();
+  for (const goal of activeGoals) {
+    await ensureWeekMaterialized(goal.id, weekStart, weekStartsOn);
+  }
+}

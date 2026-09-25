@@ -7,7 +7,7 @@ import { entriesForActivity } from './entryRepo';
 import { listActivitiesForGoal } from './activityRepo';
 import { listMilestonesForGoal } from './milestoneRepo';
 import { deleteGoalCascade, getGoal, listActiveGoals, listTrash, undoGoalDelete } from './goalRepo';
-import { createGoalWithPlan } from './planWriteRepo';
+import { createGoalWithPlan, ensureCurrentWeekMaterializedForActiveGoals } from './planWriteRepo';
 import { getWeekPlan } from './weeklyPlanRepo';
 import type { GoalId } from '../domain/types';
 
@@ -204,5 +204,63 @@ describe('deleteGoalCascade / undoGoalDelete — recoverable delete (DATA-MODEL.
     expect(await listTrash()).toHaveLength(2);
     const restored = await undoGoalDelete(trashA.id);
     expect(restored).toBe(goalA);
+  });
+});
+
+describe('ensureCurrentWeekMaterializedForActiveGoals — the fix for "tasks stop after week 1"', () => {
+  it('materializes the current week even when it is many weeks after the goal started', async () => {
+    const template = GOAL_TEMPLATES.weightChange!;
+    const goalId = await createGoalWithPlan(
+      {
+        name: 'Fitness',
+        type: 'metric',
+        startDate: asLocalDate('2026-08-01'), // 8 weeks before the "current" date below
+        deadline: { precision: 'month', value: '2027-03' },
+        color: 'teal',
+        config: { direction: 'increase', startValue: 43, targetValue: 50, unit: 'kg', decimals: 1, paceBand: null },
+        activities: template.activities,
+        milestones: template.milestones,
+      },
+      1,
+    );
+
+    const muchLater = asLocalDate('2026-09-26'); // ~8 weeks after startDate; that week was never touched
+    expect(await getWeekPlan(goalId, asLocalDate('2026-09-21'))).toBeNull(); // confirms the gap exists first
+
+    await ensureCurrentWeekMaterializedForActiveGoals(muchLater, 1);
+
+    const currentWeekPlan = await getWeekPlan(goalId, asLocalDate('2026-09-21'));
+    expect(currentWeekPlan).not.toBeNull();
+    const tasks = await listTasksForDate(muchLater);
+    expect(tasks.length).toBeGreaterThan(0);
+  });
+
+  it('is idempotent and skips paused/archived goals', async () => {
+    const template = GOAL_TEMPLATES.weightChange!;
+    const goalId = await createGoalWithPlan(
+      {
+        name: 'Paused Goal',
+        type: 'metric',
+        startDate: asLocalDate('2026-08-01'),
+        deadline: { precision: 'month', value: '2027-03' },
+        color: 'teal',
+        config: { direction: 'increase', startValue: 43, targetValue: 50, unit: 'kg', decimals: 1, paceBand: null },
+        activities: template.activities,
+        milestones: template.milestones,
+      },
+      1,
+    );
+    const db = getDb();
+    await db.goals.update(goalId, { status: 'paused' });
+
+    await ensureCurrentWeekMaterializedForActiveGoals(asLocalDate('2026-09-26'), 1);
+    expect(await getWeekPlan(goalId, asLocalDate('2026-09-21'))).toBeNull(); // never materialized — the goal is paused
+
+    // Running it twice for an active goal never creates a duplicate plan.
+    await db.goals.update(goalId, { status: 'active' });
+    await ensureCurrentWeekMaterializedForActiveGoals(asLocalDate('2026-09-26'), 1);
+    await ensureCurrentWeekMaterializedForActiveGoals(asLocalDate('2026-09-26'), 1);
+    const plans = await db.weeklyPlans.where('[goalId+weekStart]').equals([goalId, asLocalDate('2026-09-21')]).toArray();
+    expect(plans).toHaveLength(1);
   });
 });

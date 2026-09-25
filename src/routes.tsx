@@ -5,6 +5,7 @@ import { TodayScreen } from './screens/today/TodayScreen';
 import { GoalsScreen } from './screens/goals/GoalsScreen';
 import { GoalDetailScreen } from './screens/goals/GoalDetailScreen';
 import { GoalFormScreen } from './screens/goals/GoalFormScreen';
+import { GoalEditScreen } from './screens/goals/GoalEditScreen';
 import { PlanScreen } from './screens/plan/PlanScreen';
 import { WeekDetailScreen } from './screens/plan/WeekDetailScreen';
 import { ProgressScreen } from './screens/progress/ProgressScreen';
@@ -28,6 +29,7 @@ export const routes: RouteObject[] = [
     children: [
       { path: 'goals/new', element: <GoalFormScreen /> },
       { path: 'goals/:goalId', element: <GoalDetailScreen /> },
+      { path: 'goals/:goalId/edit', element: <GoalEditScreen /> },
       { path: 'plan/:weekStart', element: <WeekDetailScreen /> },
       { path: '*', element: <NotFoundScreen /> },
     ],

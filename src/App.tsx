@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppProviders } from './app/providers/AppProviders';
 import { ErrorBoundary } from './app/ErrorBoundary';
+import { MaterializationEffect } from './app/MaterializationEffect';
 import { ThemeEffect } from './app/ThemeEffect';
 import { routes } from './routes';
 
@@ -11,6 +12,7 @@ export function App() {
     <ErrorBoundary>
       <AppProviders>
         <ThemeEffect />
+        <MaterializationEffect />
         <RouterProvider router={router} />
       </AppProviders>
     </ErrorBoundary>
