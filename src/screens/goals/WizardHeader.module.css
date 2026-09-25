@@ -1,0 +1,44 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: env(safe-area-inset-top);
+  background: var(--bg);
+  z-index: 5;
+}
+.back {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  font-size: 20px;
+  visibility: visible;
+}
+.backHidden {
+  visibility: hidden;
+}
+.dots {
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.dotActive {
+  background: var(--accent);
+}
+.next {
+  min-height: var(--tap);
+  padding-inline: var(--space-2);
+  color: var(--accent);
+  font-weight: 600;
+}
+.next:disabled {
+  color: var(--fg-muted);
+  opacity: 0.6;
+}

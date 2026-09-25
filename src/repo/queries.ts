@@ -121,6 +121,9 @@ export interface WeekBarData {
   weekStart: LocalDate;
   actual: number;
   target: number;
+  /** false when the week had no plan/target at all — distinct from a genuine 0%
+   *  (spec's "no-data" vs "behind" distinction, EDGE-CASES.md D5/weekBand). */
+  hasData: boolean;
 }
 
 export interface ProgressChartData {
@@ -169,7 +172,7 @@ export async function progressChartsQuery(goalId: GoalId, today: LocalDate, week
     const weekEnd = endOfWeek(w, weekStartsOn);
     const entries = await db.entries.where('[goalId+date]').between([goalId, w], [goalId, weekEnd], true, true).toArray();
     const summary = summarizeWeek({ goal, activities, plan, entries, weekStart: w, today, weekStartsOn });
-    weeks.push({ weekStart: w, actual: summary.adherence ?? 0, target: summary.adherence === null ? 0 : 1 });
+    weeks.push({ weekStart: w, actual: summary.adherence ?? 0, target: summary.adherence === null ? 0 : 1, hasData: summary.adherence !== null });
   }
 
   const milestonesRaw = await db.milestones.where('goalId').equals(goalId).sortBy('order');

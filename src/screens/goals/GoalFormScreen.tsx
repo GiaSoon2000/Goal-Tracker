@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScreenHeader } from '../../app/ScreenHeader';
 import { asLocalDate, todayLocal } from '../../domain/date';
 import { newId } from '../../domain/ids';
 import type { ActivityDraft } from '../../domain/planner/templates';
@@ -8,29 +7,28 @@ import { templatesForType } from '../../domain/planner/templates';
 import type { Deadline, Goal, GoalColor, GoalType } from '../../domain/types';
 import { createGoalWithPlan } from '../../repo/planWriteRepo';
 import { useSettings } from '../../hooks/useSettings';
-import { Button } from '../../ui/Button';
-import { cls } from '../../ui/cls';
+import { BasicsStep } from './steps/BasicsStep';
+import { CapacityStep } from './steps/CapacityStep';
+import { PlanReviewStep } from './steps/PlanReviewStep';
+import { TimelineStep } from './steps/TimelineStep';
+import { TypeStep } from './steps/TypeStep';
+import { WizardHeader } from './WizardHeader';
 import s from './GoalFormScreen.module.css';
 
-const TYPES: { value: GoalType; label: string }[] = [
-  { value: 'metric', label: 'Metric' },
-  { value: 'habit', label: 'Habit' },
-  { value: 'skill', label: 'Skill' },
-  { value: 'project', label: 'Project' },
-];
 const COLORS: GoalColor[] = ['teal', 'blue', 'green', 'amber', 'rose', 'violet', 'slate'];
+const STEP_COUNT = 5;
 
 /**
- * A single-screen creation flow for this first working slice. UX-FLOWS.md §7
- * specifies a polished 5-step wizard ending on an editable Plan Review step;
- * this compresses those same inputs (type -> template -> basics -> timeline ->
- * capacity -> editable targets) onto one scrollable form so the pipeline is
- * real and usable now. Splitting it into the full stepped wizard is follow-up
- * UI work, not a data-model or planning-engine change.
+ * The 5-step wizard (UX-FLOWS.md §7): Type -> Basics -> Timeline -> Capacity ->
+ * Plan Review, each answerable in a glance, ending on the one screen where
+ * editing the generated plan (spec §4) is literal. Smart defaults throughout
+ * keep the common path (accept the template, tweak nothing) to a few taps.
  */
 export function GoalFormScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
+  const [step, setStep] = useState(0);
+
   const [name, setName] = useState('');
   const [type, setType] = useState<GoalType>('metric');
   const templates = useMemo(() => templatesForType(type), [type]);
@@ -69,16 +67,30 @@ export function GoalFormScreen() {
     setActivityAmounts({});
   }
 
+  function selectTemplate(id: string) {
+    setTemplateId(id);
+    setActivityAmounts({});
+    const t = templates.find((x) => x.id === id);
+    if (t) setAvailableDaysPerWeek(t.suggestedAvailableDaysPerWeek);
+  }
+
   function adjustAmount(index: number, delta: number) {
     const current = activityAmounts[index] ?? template?.activities[index]?.defaultTarget?.amount ?? 0;
     setActivityAmounts((prev) => ({ ...prev, [index]: Math.max(0, current + delta) }));
   }
 
-  const canSubmit = name.trim().length > 0 && !!template && (deadlinePrecision === 'day' ? deadlineValue !== '' : deadlineValue !== '' || type === 'habit');
+  const deadline: Deadline | null = !deadlineValue ? null : deadlinePrecision === 'day' ? { precision: 'day', value: asLocalDate(deadlineValue) } : { precision: 'month', value: deadlineValue };
+
+  const stepValid = [
+    true, // Type — always has a default
+    name.trim().length > 0 && (type !== 'metric' || (startValue !== '' && targetValue !== '')) && (type !== 'skill' || targetOutcome.trim() !== ''),
+    deadlineValue !== '' || type === 'habit',
+    true, // Capacity — a slider always has a value
+    true, // Plan Review — the final Create action itself gates on the above
+  ][step];
 
   async function handleSubmit() {
     if (!template) return;
-    const deadline: Deadline | null = !deadlineValue ? null : deadlinePrecision === 'day' ? { precision: 'day', value: asLocalDate(deadlineValue) } : { precision: 'month', value: deadlineValue };
 
     let config: Goal['config'];
     if (type === 'metric') {
@@ -107,139 +119,44 @@ export function GoalFormScreen() {
     void navigate(`/goals/${goalId}`);
   }
 
+  function handleNext() {
+    if (step === STEP_COUNT - 1) {
+      void handleSubmit();
+    } else if (stepValid) {
+      setStep(step + 1);
+    }
+  }
+
+  function handleBack() {
+    if (step === 0) void navigate(-1);
+    else setStep(step - 1);
+  }
+
   return (
     <>
-      <ScreenHeader title="New goal" action={<span />} />
-      <div style={{ padding: 16 }}>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="goal-name">
-            Name
-          </label>
-          <input id="goal-name" className={s.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Fitness" />
-        </div>
-
-        <div className={s.field}>
-          <span className={s.label}>Type</span>
-          <div className={s.segmented}>
-            {TYPES.map((t) => (
-              <button key={t.value} type="button" className={cls(s.segmentButton, type === t.value && s.active)} onClick={() => selectType(t.value)}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {templates.length > 0 && (
-          <div className={s.field}>
-            <label className={s.label} htmlFor="goal-template">
-              Starting point
-            </label>
-            <select id="goal-template" className={s.select} value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      <WizardHeader step={step} stepCount={STEP_COUNT} onBack={handleBack} onNext={handleNext} nextLabel={step === STEP_COUNT - 1 ? 'Create' : 'Next'} nextDisabled={!stepValid} />
+      <div className={s.stepBody}>
+        {step === 0 && <TypeStep type={type} onTypeChange={selectType} templates={templates} templateId={templateId} onTemplateChange={selectTemplate} />}
+        {step === 1 && (
+          <BasicsStep
+            type={type}
+            name={name}
+            onNameChange={setName}
+            startValue={startValue}
+            onStartValueChange={setStartValue}
+            targetValue={targetValue}
+            onTargetValueChange={setTargetValue}
+            unit={unit}
+            onUnitChange={setUnit}
+            currentLevel={currentLevel}
+            onCurrentLevelChange={setCurrentLevel}
+            targetOutcome={targetOutcome}
+            onTargetOutcomeChange={setTargetOutcome}
+          />
         )}
-
-        {type === 'metric' && (
-          <div className={s.row}>
-            <div className={s.field}>
-              <label className={s.label} htmlFor="start-value">
-                Current
-              </label>
-              <input id="start-value" className={s.input} inputMode="decimal" value={startValue} onChange={(e) => setStartValue(e.target.value)} placeholder="43" />
-            </div>
-            <div className={s.field}>
-              <label className={s.label} htmlFor="target-value">
-                Target
-              </label>
-              <input id="target-value" className={s.input} inputMode="decimal" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} placeholder="50" />
-            </div>
-            <div className={s.field}>
-              <label className={s.label} htmlFor="unit">
-                Unit
-              </label>
-              <input id="unit" className={s.input} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="kg" />
-            </div>
-          </div>
-        )}
-
-        {type === 'skill' && (
-          <div className={s.row}>
-            <div className={s.field}>
-              <label className={s.label} htmlFor="current-level">
-                Current level
-              </label>
-              <input id="current-level" className={s.input} value={currentLevel} onChange={(e) => setCurrentLevel(e.target.value)} />
-            </div>
-            <div className={s.field}>
-              <label className={s.label} htmlFor="target-outcome">
-                Goal
-              </label>
-              <input id="target-outcome" className={s.input} value={targetOutcome} onChange={(e) => setTargetOutcome(e.target.value)} placeholder="Play 5 songs" />
-            </div>
-          </div>
-        )}
-
-        <div className={s.row}>
-          <div className={s.field}>
-            <label className={s.label} htmlFor="start-date">
-              Start
-            </label>
-            <input id="start-date" type="date" className={s.input} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </div>
-          <div className={s.field}>
-            <label className={s.label} htmlFor="deadline">
-              Deadline {type === 'habit' && '(optional)'}
-            </label>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <select className={s.select} style={{ width: 70 }} value={deadlinePrecision} onChange={(e) => setDeadlinePrecision(e.target.value as 'month' | 'day')}>
-                <option value="month">Month</option>
-                <option value="day">Day</option>
-              </select>
-              <input id="deadline" type={deadlinePrecision === 'month' ? 'month' : 'date'} className={s.input} value={deadlineValue} onChange={(e) => setDeadlineValue(e.target.value)} />
-            </div>
-          </div>
-        </div>
-
-        <div className={s.field}>
-          <label className={s.label} htmlFor="days-per-week">
-            Days available per week: {availableDaysPerWeek}
-          </label>
-          <input id="days-per-week" type="range" min={1} max={7} value={availableDaysPerWeek} onChange={(e) => setAvailableDaysPerWeek(Number(e.target.value))} style={{ width: '100%' }} />
-        </div>
-
-        {template && template.activities.some((a) => a.defaultTarget) && (
-          <div className={s.field}>
-            <span className={s.label}>Suggested plan — edit any number</span>
-            {template.activities.map((a, i) =>
-              a.defaultTarget ? (
-                <div key={a.name} className={s.activityRow}>
-                  <span>{a.name}</span>
-                  <span className={s.stepper}>
-                    <button type="button" className={s.stepperButton} onClick={() => adjustAmount(i, -1)}>
-                      −
-                    </button>
-                    <span>{activityAmounts[i] ?? a.defaultTarget.amount}</span>
-                    <button type="button" className={s.stepperButton} onClick={() => adjustAmount(i, 1)}>
-                      +
-                    </button>
-                  </span>
-                </div>
-              ) : null,
-            )}
-            <p className={s.hint}>A suggestion — edit anytime from the goal&apos;s Plan.</p>
-          </div>
-        )}
-
-        <div className={s.footer}>
-          <Button variant="primary" disabled={!canSubmit} onClick={() => void handleSubmit()}>
-            Create goal
-          </Button>
-        </div>
+        {step === 2 && <TimelineStep type={type} startDate={startDate} onStartDateChange={setStartDate} deadlinePrecision={deadlinePrecision} onDeadlinePrecisionChange={setDeadlinePrecision} deadlineValue={deadlineValue} onDeadlineValueChange={setDeadlineValue} />}
+        {step === 3 && <CapacityStep availableDaysPerWeek={availableDaysPerWeek} onChange={setAvailableDaysPerWeek} />}
+        {step === 4 && <PlanReviewStep template={template} activityAmounts={activityAmounts} onAdjustAmount={adjustAmount} type={type} startValue={startValue} targetValue={targetValue} unit={unit} startDate={startDate} deadline={deadline} />}
       </div>
     </>
   );

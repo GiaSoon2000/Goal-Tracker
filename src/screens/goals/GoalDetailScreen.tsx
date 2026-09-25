@@ -8,7 +8,7 @@ import type { ReplanResult } from '../../domain/planner/replan';
 import { useGoalDetail } from '../../hooks/useGoalDetail';
 import { useSettings } from '../../hooks/useSettings';
 import { useToday } from '../../hooks/useToday';
-import { deleteGoalCascade, setGoalStatus, undoGoalDelete } from '../../repo/goalRepo';
+import { archiveGoal, deleteGoalCascade, setGoalStatus, undoGoalDelete } from '../../repo/goalRepo';
 import { setMilestoneStatus } from '../../repo/milestoneRepo';
 import { applyReplan, previewReplan } from '../../repo/replanRepo';
 import { Button } from '../../ui/Button';
@@ -71,6 +71,18 @@ export function GoalDetailScreen() {
 
   async function handleToggleMilestone(id: MilestoneId, currentStatus: MilestoneStatus) {
     await setMilestoneStatus(id, currentStatus === 'done' ? 'pending' : 'done');
+  }
+
+  async function handleArchive() {
+    const ok = await confirm({
+      title: `Archive "${goal!.name}"?`,
+      description: 'It leaves Goals and Today, but every past log and completed task stays readable. Pending tasks for today onward are removed. You can unarchive it anytime.',
+      confirmLabel: 'Archive',
+    });
+    if (!ok) return;
+    await archiveGoal(goal!.id, today);
+    void navigate('/goals');
+    toast.show(`"${goal!.name}" archived`);
   }
 
   return (
@@ -155,12 +167,19 @@ export function GoalDetailScreen() {
 
         <div className={s.actions}>
           <Button onClick={() => void navigate(`/goals/${goal!.id}/edit`)}>Edit</Button>
-          {goal.status === 'active' ? (
-            <Button onClick={() => void setGoalStatus(goal!.id, 'paused')}>Pause</Button>
+          {goal.status === 'archived' ? (
+            <Button onClick={() => void setGoalStatus(goal!.id, 'active')}>Unarchive</Button>
           ) : (
-            <Button onClick={() => void setGoalStatus(goal!.id, 'active')}>Resume</Button>
+            <>
+              {goal.status === 'active' ? (
+                <Button onClick={() => void setGoalStatus(goal!.id, 'paused')}>Pause</Button>
+              ) : (
+                <Button onClick={() => void setGoalStatus(goal!.id, 'active')}>Resume</Button>
+              )}
+              {goal.status === 'active' && <Button onClick={() => void handleReplan()}>Re-plan</Button>}
+              <Button onClick={() => void handleArchive()}>Archive</Button>
+            </>
           )}
-          {goal.status === 'active' && <Button onClick={() => void handleReplan()}>Re-plan</Button>}
         </div>
       </div>
 

@@ -40,3 +40,15 @@
   font-size: var(--text-caption);
   margin-top: var(--space-2);
 }
+.collapsedSection {
+  margin-top: var(--space-4);
+}
+.collapsedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: var(--tap);
+  color: var(--fg-muted);
+  font-weight: 600;
+}

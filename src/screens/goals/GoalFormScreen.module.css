@@ -67,3 +67,6 @@
 .footer {
   margin-top: var(--space-6);
 }
+.stepBody {
+  padding: 16px;
+}

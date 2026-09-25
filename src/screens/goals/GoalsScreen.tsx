@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatMonthYear, resolveDeadline } from '../../domain/date';
+import { useGoalsByStatus } from '../../hooks/useGoals';
 import { useGoalsScreen } from '../../hooks/useGoalsScreen';
 import { EmptyState } from '../../ui/EmptyState';
 import { ProgressBar } from '../../ui/ProgressBar';
+import type { Goal, GoalStatus } from '../../domain/types';
 import s from './GoalsScreen.module.css';
 
 export function GoalsScreen() {
@@ -30,6 +33,37 @@ export function GoalsScreen() {
                 {progress.ratio !== null && <span>{Math.round(progress.ratio * 100)}%</span>}
                 {goal.deadline && <span>Deadline: {formatMonthYear(resolveDeadline(goal.deadline))}</span>}
               </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <CollapsedStatusSection status="paused" label="Paused" />
+      <CollapsedStatusSection status="archived" label="Archived" />
+    </div>
+  );
+}
+
+/** Goals that have left the active list are never a dead end — this is the only
+ *  way back to a paused/archived goal, so it must exist even though it's rare (spec §8). */
+function CollapsedStatusSection({ status, label }: { status: GoalStatus; label: string }) {
+  const { data: goals } = useGoalsByStatus(status);
+  const [open, setOpen] = useState(false);
+  if (goals.length === 0) return null;
+
+  return (
+    <div className={s.collapsedSection}>
+      <button type="button" className={s.collapsedHeader} onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span>
+          {label} ({goals.length})
+        </span>
+        <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div className={s.list}>
+          {goals.map((goal: Goal) => (
+            <Link key={goal.id} to={`/goals/${goal.id}`} className={s.row}>
+              <div className={s.name}>{goal.name}</div>
             </Link>
           ))}
         </div>

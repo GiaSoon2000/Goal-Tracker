@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatWeekRange } from '../../../domain/date';
+import { cls } from '../../../ui/cls';
 import type { LocalDate, WeekStart } from '../../../domain/types';
 import s from './charts.module.css';
 
@@ -7,13 +8,17 @@ export interface WeekBar {
   weekStart: LocalDate;
   actual: number;
   target: number;
+  /** false when the week had no plan at all — distinct from a genuine 0% (D5/weekBand). */
+  hasData: boolean;
 }
 
 /**
  * Planned vs actual, per week (spec §13). One value (actual) is the point;
  * planned/target is a reference threshold, not a second identity series — drawn
  * as a dashed tick rather than a second bar, so no categorical legend is needed
- * (marks-and-anatomy.md: a single series needs no legend box).
+ * (marks-and-anatomy.md: a single series needs no legend box). A week with no
+ * plan at all renders as a neutral dash, never a 0%-height bar that would read
+ * as a failure that never actually happened (spec §5's tone rule).
  */
 export function WeeklyConsistencyBars({ weeks, weekStartsOn }: { weeks: WeekBar[]; weekStartsOn: WeekStart }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -28,12 +33,12 @@ export function WeeklyConsistencyBars({ weeks, weekStartsOn }: { weeks: WeekBar[
           const targetPct = (w.target / maxValue) * 100;
           return (
             <div key={w.weekStart} className={s.barColumn}>
-              {w.target > 0 && <div className={s.barTarget} style={{ bottom: `${targetPct}%` }} />}
+              {w.hasData && w.target > 0 && <div className={s.barTarget} style={{ bottom: `${targetPct}%` }} />}
               <button
                 type="button"
-                className={s.bar}
-                style={{ height: `${heightPct}%` }}
-                aria-label={`${formatWeekRange(w.weekStart, weekStartsOn)}: ${w.actual} of ${w.target}`}
+                className={cls(s.bar, !w.hasData && s.barNoData)}
+                style={{ height: w.hasData ? `${heightPct}%` : '3px' }}
+                aria-label={w.hasData ? `${formatWeekRange(w.weekStart, weekStartsOn)}: ${w.actual} of ${w.target}` : `${formatWeekRange(w.weekStart, weekStartsOn)}: no plan`}
                 onPointerEnter={() => setActiveIndex(i)}
                 onPointerLeave={() => setActiveIndex(null)}
                 onClick={() => setActiveIndex(activeIndex === i ? null : i)}
@@ -45,7 +50,7 @@ export function WeeklyConsistencyBars({ weeks, weekStartsOn }: { weeks: WeekBar[
       <div style={{ height: 20 }}>
         {active && (
           <p style={{ fontSize: 12, color: 'var(--fg-muted)', textAlign: 'center' }}>
-            {formatWeekRange(active.weekStart, weekStartsOn)}: {active.actual} of {active.target}
+            {formatWeekRange(active.weekStart, weekStartsOn)}: {active.hasData ? `${active.actual} of ${active.target}` : 'no plan that week'}
           </p>
         )}
       </div>
@@ -62,8 +67,8 @@ export function WeeklyConsistencyBars({ weeks, weekStartsOn }: { weeks: WeekBar[
           {weeks.map((w) => (
             <tr key={w.weekStart}>
               <td>{formatWeekRange(w.weekStart, weekStartsOn)}</td>
-              <td>{w.actual}</td>
-              <td>{w.target}</td>
+              <td>{w.hasData ? w.actual : '—'}</td>
+              <td>{w.hasData ? w.target : '—'}</td>
             </tr>
           ))}
         </tbody>

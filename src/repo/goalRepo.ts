@@ -37,6 +37,21 @@ export async function setGoalStatus(id: GoalId, status: GoalStatus): Promise<voi
   await db.goals.put({ ...existing, ...patch } as Goal);
 }
 
+/**
+ * Archive leaves ALL history readable (spec §8) — only pending, not-yet-due
+ * tasks are removed; every past task and every measurement survives untouched
+ * (EDGE-CASES.md EC-L07). Un-archiving is `setGoalStatus(id, 'active')` directly —
+ * nothing needs to be regenerated, since ensureCurrentWeekMaterializedForActiveGoals
+ * picks the goal back up the next time it runs.
+ */
+export async function archiveGoal(id: GoalId, today: LocalDate): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', [db.goals, db.tasks], async () => {
+    await setGoalStatus(id, 'archived');
+    await db.tasks.where('goalId').equals(id).filter((t) => t.status === 'pending' && t.date >= today).delete();
+  });
+}
+
 /** Adds a new pause interval, or is a no-op if one is already open (idempotent). */
 export async function pauseGoal(id: GoalId, from: LocalDate, now = Date.now()): Promise<void> {
   const db = getDb();

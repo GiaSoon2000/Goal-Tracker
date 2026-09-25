@@ -4,7 +4,7 @@ import { asLocalDate } from '../domain/date';
 import { GOAL_TEMPLATES } from '../domain/planner/templates';
 import { createGoalWithPlan } from './planWriteRepo';
 import { listTasksForDate } from './taskRepo';
-import { getGoal, pauseGoal, resumeGoal, setGoalStatus, updateGoal } from './goalRepo';
+import { archiveGoal, getGoal, listGoalsByStatus, pauseGoal, resumeGoal, setGoalStatus, updateGoal } from './goalRepo';
 
 beforeEach(async () => {
   const db = getDb();
@@ -92,5 +92,36 @@ describe('pauseGoal / resumeGoal', () => {
     const goal = await getGoal(goalId);
     expect(goal?.status).toBe('active');
     expect(goal?.pauses).toEqual([{ from: '2026-09-19', to: '2026-09-25' }]);
+  });
+});
+
+describe('archiveGoal — spec §8, EDGE-CASES.md EC-L07', () => {
+  it('removes only pending tasks dated today or later, keeping every past task', async () => {
+    const goalId = await seedGoal();
+    const today = asLocalDate('2026-09-19');
+    const tasksBefore = await listTasksForDate(today);
+    expect(tasksBefore.length).toBeGreaterThan(0); // sanity: something exists to be removed
+
+    await archiveGoal(goalId, today);
+
+    const goal = await getGoal(goalId);
+    expect(goal?.status).toBe('archived');
+    expect(goal?.archivedAt).not.toBeNull();
+    expect(await listTasksForDate(today)).toHaveLength(0);
+  });
+
+  it('appears under listGoalsByStatus("archived") and never under active', async () => {
+    const goalId = await seedGoal();
+    await archiveGoal(goalId, asLocalDate('2026-09-19'));
+    expect((await listGoalsByStatus('archived')).map((g) => g.id)).toContain(goalId);
+    expect((await listGoalsByStatus('active')).map((g) => g.id)).not.toContain(goalId);
+  });
+
+  it('can be reactivated with setGoalStatus back to active', async () => {
+    const goalId = await seedGoal();
+    await archiveGoal(goalId, asLocalDate('2026-09-19'));
+    await setGoalStatus(goalId, 'active');
+    const goal = await getGoal(goalId);
+    expect(goal?.status).toBe('active');
   });
 });

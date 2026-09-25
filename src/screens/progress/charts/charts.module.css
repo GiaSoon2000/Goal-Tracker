@@ -62,6 +62,9 @@
   background: var(--accent);
   min-height: 2px;
 }
+.barNoData {
+  background: var(--border);
+}
 .barTarget {
   position: absolute;
   left: -2px;
