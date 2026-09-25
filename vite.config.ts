@@ -3,8 +3,16 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// GitHub Pages serves a repo as a project site under /<repo-name>/, not at the
+// origin root — every manifest URL below must be built with that same prefix or
+// the installed PWA's start_url/scope point at the wrong place on the domain.
+// vite-plugin-pwa does NOT do this automatically (it takes the manifest object
+// as literal JSON), unlike script/link tags in index.html which Vite itself
+// rewrites. Defaults to '/' for a root deployment (e.g. Vercel).
+const base = process.env.VITE_BASE ?? '/';
+
 export default defineConfig({
-  base: process.env.VITE_BASE ?? '/',
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -13,12 +21,12 @@ export default defineConfig({
       strategies: 'generateSW',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        id: '/',
+        id: base,
         name: 'Goal Planner — backward planning',
         short_name: 'Goal Planner',
         description: "Turn a goal and a deadline into milestones, weekly targets and today's tasks.",
-        start_url: '/?source=pwa',
-        scope: '/',
+        start_url: `${base}?source=pwa`,
+        scope: base,
         display: 'standalone',
         display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
@@ -28,9 +36,9 @@ export default defineConfig({
         dir: 'ltr',
         categories: ['productivity', 'lifestyle'],
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: `${base}icons/icon-192.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: `${base}icons/icon-512-maskable.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

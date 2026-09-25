@@ -17,7 +17,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Goal Planner" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- vite-plugin-pwa injects the manifest link itself, correctly prefixed with
+         `base` for a subpath deployment — a hand-written one here would be wrong
+         on GitHub Pages and duplicate the tag. -->
   </head>
   <body>
     <div id="root"></div>
