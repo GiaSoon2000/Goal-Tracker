@@ -1,0 +1,21 @@
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--space-3));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--fg);
+  color: var(--bg);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body);
+  max-width: calc(100vw - 32px);
+}
+.action {
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}

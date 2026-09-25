@@ -1,0 +1,53 @@
+.hero {
+  padding-block: var(--space-4);
+}
+.subtitle {
+  color: var(--fg-muted);
+  margin-bottom: var(--space-2);
+}
+.current {
+  font-size: var(--text-stat);
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+}
+.deadline {
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+  margin-top: var(--space-2);
+}
+.section {
+  margin-top: var(--space-5);
+}
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.sectionTitle {
+  font-weight: 600;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.milestone {
+  width: 100%;
+  min-height: var(--tap);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+}
+.milestoneDone {
+  color: var(--fg-muted);
+  text-decoration: line-through;
+}
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}

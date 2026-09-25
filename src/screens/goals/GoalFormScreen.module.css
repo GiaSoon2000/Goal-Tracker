@@ -1,0 +1,69 @@
+.field {
+  margin-bottom: var(--space-4);
+}
+.label {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--fg-muted);
+  margin-bottom: var(--space-1);
+}
+.input,
+.select {
+  width: 100%;
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg);
+}
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+.segmentButton {
+  min-height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+}
+.segmentButton.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.row {
+  display: flex;
+  gap: var(--space-3);
+}
+.row > * {
+  flex: 1;
+}
+.activityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.stepperButton {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 700;
+}
+.hint {
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+  margin-top: var(--space-1);
+}
+.footer {
+  margin-top: var(--space-6);
+}

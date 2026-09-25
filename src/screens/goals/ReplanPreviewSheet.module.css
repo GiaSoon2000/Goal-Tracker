@@ -1,0 +1,47 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  background: var(--surface);
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: var(--space-5) var(--space-4);
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+.title {
+  font-size: var(--text-row-title);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.rowLabel {
+  color: var(--fg-muted);
+}
+.warning {
+  background: var(--missed-bg);
+  color: var(--behind);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-3);
+  font-size: var(--text-caption);
+}
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.actions > * {
+  flex: 1;
+}

@@ -1,0 +1,40 @@
+.nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.item {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-height: var(--tap);
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.item[aria-current='page'] {
+  color: var(--accent);
+}
+.icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+@media (min-width: 700px) {
+  .nav {
+    inset-inline: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px;
+    width: 520px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+}

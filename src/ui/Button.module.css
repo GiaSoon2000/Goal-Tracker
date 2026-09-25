@@ -1,0 +1,31 @@
+.button {
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--text-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  width: 100%;
+}
+.secondary {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+.ghost {
+  color: var(--accent);
+}
+.danger {
+  background: var(--danger);
+  color: var(--danger-fg);
+}
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
