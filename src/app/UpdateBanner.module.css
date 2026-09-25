@@ -1,0 +1,28 @@
+.banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--fg);
+  color: var(--bg);
+  font-size: var(--text-caption);
+}
+.reload {
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+  min-height: var(--tap);
+  padding-inline: var(--space-2);
+}
+.dismiss {
+  color: var(--bg);
+  opacity: 0.7;
+  min-height: var(--tap);
+  min-width: var(--tap);
+}
