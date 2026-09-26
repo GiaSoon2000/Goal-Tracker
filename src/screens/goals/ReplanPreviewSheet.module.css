@@ -20,6 +20,37 @@
   font-weight: 600;
   margin-bottom: var(--space-4);
 }
+.intro {
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+  margin-bottom: var(--space-3);
+}
+.changeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.changeValue {
+  font-variant-numeric: tabular-nums;
+}
+.perWeek {
+  font-weight: 400;
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+}
+.details {
+  margin-top: var(--space-4);
+}
+.detailsSummary {
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  cursor: pointer;
+  padding-block: var(--space-2);
+}
 .row {
   display: flex;
   justify-content: space-between;

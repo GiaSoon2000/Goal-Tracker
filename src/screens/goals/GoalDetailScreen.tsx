@@ -183,7 +183,7 @@ export function GoalDetailScreen() {
         </div>
       </div>
 
-      {replanDiff && <ReplanPreviewSheet diff={replanDiff} onApply={() => void handleApplyReplan()} onCancel={() => setReplanDiff(null)} />}
+      {replanDiff && <ReplanPreviewSheet diff={replanDiff} activities={activities} onApply={() => void handleApplyReplan()} onCancel={() => setReplanDiff(null)} />}
       {loggingActivity && (
         <QuickLogSheet
           goalId={goal.id}
