@@ -40,12 +40,22 @@
 .row > * {
   flex: 1;
 }
+.activityBlock {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
 .activityRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-block: var(--space-2);
-  border-bottom: 1px solid var(--border);
+}
+.activityName {
+  font-weight: 600;
+}
+.unitLabel {
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+  font-weight: 400;
 }
 .stepper {
   display: flex;

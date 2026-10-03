@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { ScreenHeader } from '../../app/ScreenHeader';
 import { useToast } from '../../app/providers/ToastProvider';
 import { asLocalDate, formatWeekRange, resolveDeadline } from '../../domain/date';
+import { targetDescription, targetUnitLabel } from '../../domain/format';
 import { weekTargetsFor } from '../../domain/planner/weekTargets';
 import { useWeekDetail } from '../../hooks/useWeekDetail';
 import { useSettings } from '../../hooks/useSettings';
@@ -63,17 +64,22 @@ export function WeekDetailScreen() {
                 const activity = row.activities.find((a) => a.id === target.activityId);
                 if (!activity) return null;
                 return (
-                  <div key={target.activityId} className={s.row}>
-                    <span>{activity.name}</span>
-                    <span className={s.stepper}>
-                      <button type="button" className={s.stepperButton} onClick={() => adjust(row.plan.id, row.plan.targets, target.activityId, -1)}>
-                        −
-                      </button>
-                      <span>{target.amount}</span>
-                      <button type="button" className={s.stepperButton} onClick={() => adjust(row.plan.id, row.plan.targets, target.activityId, 1)}>
-                        +
-                      </button>
-                    </span>
+                  <div key={target.activityId} className={s.activityBlock}>
+                    <div className={s.row}>
+                      <span className={s.activityName}>{activity.name}</span>
+                      <span className={s.stepper}>
+                        <button type="button" className={s.stepperButton} onClick={() => adjust(row.plan.id, row.plan.targets, target.activityId, -1)}>
+                          −
+                        </button>
+                        <span>
+                          {target.amount} <span className={s.unitLabel}>{targetUnitLabel(activity, target, target.amount)}</span>
+                        </span>
+                        <button type="button" className={s.stepperButton} onClick={() => adjust(row.plan.id, row.plan.targets, target.activityId, 1)}>
+                          +
+                        </button>
+                      </span>
+                    </div>
+                    <p className={s.hint}>{targetDescription(activity)}</p>
                   </div>
                 );
               })}

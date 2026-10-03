@@ -1,4 +1,5 @@
 import { asLocalDate, resolveDeadline, weeksBetween } from '../../../domain/date';
+import { targetDescription, targetUnitLabel } from '../../../domain/format';
 import type { GoalTemplate } from '../../../domain/planner/templates';
 import type { Deadline, GoalType } from '../../../domain/types';
 import s from '../GoalFormScreen.module.css';
@@ -31,17 +32,22 @@ export function PlanReviewStep({ template, activityAmounts, onAdjustAmount, type
 
       {template?.activities.map((a, i) =>
         a.defaultTarget ? (
-          <div key={a.name} className={s.activityRow}>
-            <span>{a.name}</span>
-            <span className={s.stepper}>
-              <button type="button" className={s.stepperButton} onClick={() => onAdjustAmount(i, -1)}>
-                −
-              </button>
-              <span>{activityAmounts[i] ?? a.defaultTarget.amount}</span>
-              <button type="button" className={s.stepperButton} onClick={() => onAdjustAmount(i, 1)}>
-                +
-              </button>
-            </span>
+          <div key={a.name} className={s.activityBlock}>
+            <div className={s.activityRow}>
+              <span className={s.activityName}>{a.name}</span>
+              <span className={s.stepper}>
+                <button type="button" className={s.stepperButton} onClick={() => onAdjustAmount(i, -1)}>
+                  −
+                </button>
+                <span>
+                  {activityAmounts[i] ?? a.defaultTarget.amount} <span className={s.unitLabel}>{targetUnitLabel(a, a.defaultTarget, activityAmounts[i] ?? a.defaultTarget.amount)}</span>
+                </span>
+                <button type="button" className={s.stepperButton} onClick={() => onAdjustAmount(i, 1)}>
+                  +
+                </button>
+              </span>
+            </div>
+            <p className={s.hint}>{targetDescription(a)}</p>
           </div>
         ) : null,
       )}
